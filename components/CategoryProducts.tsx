@@ -1,13 +1,32 @@
 "use client";
-import { Category, Product } from "@/sanity.types";
+
+import { Category } from "@/sanity.types";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { client } from "@/sanity/lib/client";
 import { AnimatePresence, motion } from "motion/react";
 import { Loader2 } from "lucide-react";
 import NoProductAvailable from "./NoProductAvailable";
 import ProductCard from "./ProductCard";
+
+// Kiểu product trả về từ /api/products
+type ApiProduct = {
+  id: string;
+  _id: string;
+  name: string;
+  slug: { current: string } | string;
+  description?: string | null;
+  price: number;
+  discount?: number | null;
+  stock: number;
+  status: string;
+  variant: string;
+  isFeatured?: boolean;
+  images?: string[];
+  categories?: string[]; // danh sách tên category (title)
+  brandName?: string | null;
+};
+
 interface Props {
   categories: Category[];
   slug: string;
@@ -15,24 +34,45 @@ interface Props {
 
 const CategoryProducts = ({ categories, slug }: Props) => {
   const [currentSlug, setCurrentSlug] = useState(slug);
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
   const handleCategoryChange = (newSlug: string) => {
-    if (newSlug === currentSlug) return; // Prevent unnecessary updates
+    if (newSlug === currentSlug) return; // tránh gọi lại nếu trùng
     setCurrentSlug(newSlug);
-    router.push(`/category/${newSlug}`, { scroll: false }); // Update URL without
+    router.push(`/category/${newSlug}`, { scroll: false });
   };
 
   const fetchProducts = async (categorySlug: string) => {
     setLoading(true);
     try {
-      const query = `
-        *[_type == 'product' && references(*[_type == "category" && slug.current == $categorySlug]._id)] | order(name asc){
-        ...,"categories": categories[]->title}
-      `;
-      const data = await client.fetch(query, { categorySlug });
-      setProducts(data);
+      // Tìm title của category dựa trên slug (từ props categories)
+      const matchedCategory = categories.find(
+        (c: any) =>
+          c.slug?.current === categorySlug || c.slug === categorySlug
+      );
+      const categoryTitle = matchedCategory?.title;
+
+      // Lấy toàn bộ products từ Prisma API
+      const res = await fetch("/api/products");
+      if (!res.ok) {
+        throw new Error("Failed to fetch products");
+      }
+      const data: ApiProduct[] = await res.json();
+
+      // Nếu tìm được title -> lọc theo title trong mảng categories của product
+      let filtered = data;
+      if (categoryTitle) {
+        const lowerTitle = categoryTitle.toLowerCase();
+        filtered = data.filter((p) =>
+          p.categories?.some(
+            (cat) => cat.toLowerCase() === lowerTitle
+          )
+        );
+      }
+
+      setProducts(filtered);
     } catch (error) {
       console.error("Error fetching products:", error);
       setProducts([]);
@@ -40,23 +80,33 @@ const CategoryProducts = ({ categories, slug }: Props) => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchProducts(currentSlug);
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSlug]);
 
   return (
     <div className="py-5 flex flex-col md:flex-row items-start gap-5">
+      {/* Sidebar category */}
       <div className="flex flex-col md:min-w-40 border">
         {categories?.map((item) => (
           <Button
-            onClick={() => handleCategoryChange(item?.slug?.current as string)}
+            onClick={() =>
+              handleCategoryChange(item?.slug?.current as string)
+            }
             key={item?._id}
-            className={`bg-transparent border-0 p-0  rounded-none text-darkColor shadow-none hover:bg-shop_orange hover:text-white font-semibold hoverEffect border-b last:border-b-0 transition-colors capitalize ${item?.slug?.current === currentSlug && "bg-shop_orange text-white border-shop_orange"}`}
+            className={`bg-transparent border-0 p-0 rounded-none text-darkColor shadow-none hover:bg-shop_orange hover:text-white font-semibold hoverEffect border-b last:border-b-0 transition-colors capitalize ${
+              item?.slug?.current === currentSlug &&
+              "bg-shop_orange text-white border-shop_orange"
+            }`}
           >
             <p className="w-full text-left px-2">{item?.title}</p>
           </Button>
         ))}
       </div>
+
+      {/* Product list */}
       <div className="flex-1">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-10 min-h-80 space-y-4 text-center bg-gray-100 rounded-lg w-full">
@@ -67,10 +117,10 @@ const CategoryProducts = ({ categories, slug }: Props) => {
           </div>
         ) : products?.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
-            {products?.map((product: Product) => (
+            {products.map((product) => (
               <AnimatePresence key={product._id}>
                 <motion.div>
-                  <ProductCard product={product} />
+                  <ProductCard product={product as any} />
                 </motion.div>
               </AnimatePresence>
             ))}

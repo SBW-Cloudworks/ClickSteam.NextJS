@@ -1,6 +1,6 @@
 "use client";
 
-import { MY_ORDERS_QUERYResult } from "@/sanity.types";
+import { useState } from "react";
 import { TableBody, TableCell, TableRow } from "./ui/table";
 import {
   Tooltip,
@@ -11,47 +11,72 @@ import {
 import PriceFormatter from "./PriceFormatter";
 import { format } from "date-fns";
 import { X } from "lucide-react";
-import { useState } from "react";
 import OrderDetailDialog from "./OrderDetailDialog";
 import toast from "react-hot-toast";
 
-const OrdersComponent = ({ orders }: { orders: MY_ORDERS_QUERYResult }) => {
-  const [selectedOrder, setSelectedOrder] = useState<
-    MY_ORDERS_QUERYResult[number] | null
-  >(null);
+// Kiểu dữ liệu order lấy từ Prisma
+type OrderRow = {
+  id: string;
+  orderNumber: string;
+  totalPrice: number;
+  status: string;
+  createdAt: string | Date;
+  // các field dưới đây có thể chưa có trong DB, nên để optional
+  customerName?: string | null;
+  email?: string | null;
+  invoiceNumber?: string | null;
+};
+
+const OrdersComponent = ({ orders }: { orders: OrderRow[] }) => {
+  const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
+
   const handleDelete = () => {
-    toast.error("Delete method applied for Admin");
+    toast.error("Delete method is only available for Admin");
   };
+
   return (
     <>
       <TableBody>
         <TooltipProvider>
           {orders.map((order) => (
-            <Tooltip key={order?.orderNumber}>
+            <Tooltip key={order.id ?? order.orderNumber}>
               <TooltipTrigger asChild>
                 <TableRow
                   className="cursor-pointer hover:bg-gray-100 h-12"
                   onClick={() => setSelectedOrder(order)}
                 >
+                  {/* Order number */}
                   <TableCell className="font-medium">
-                    {order.orderNumber?.slice(-10) ?? "N/A"}...
+                    {order.orderNumber
+                      ? `${order.orderNumber.slice(-10)}...`
+                      : "N/A"}
                   </TableCell>
+
+                  {/* Date */}
                   <TableCell className="hidden md:table-cell">
-                    {order?.orderDate &&
-                      format(new Date(order.orderDate), "dd/MM/yyyy")}
+                    {order.createdAt &&
+                      format(new Date(order.createdAt), "dd/MM/yyyy")}
                   </TableCell>
-                  <TableCell>{order.customerName}</TableCell>
+
+                  {/* Customer name (hiện chưa lưu nên fallback '-') */}
+                  <TableCell>{order.customerName ?? "-"}</TableCell>
+
+                  {/* Email (hiện chưa lưu nên fallback '-') */}
                   <TableCell className="hidden sm:table-cell">
-                    {order.email}
+                    {order.email ?? "-"}
                   </TableCell>
+
+                  {/* Total price */}
                   <TableCell>
                     <PriceFormatter
-                      amount={order?.totalPrice}
+                      amount={order.totalPrice}
                       className="text-black font-medium"
                     />
                   </TableCell>
+
+                  {/* Status */}
                   <TableCell>
-                    {order?.status && (
+                    {order.status && (
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-semibold ${
                           order.status === "paid"
@@ -59,19 +84,20 @@ const OrdersComponent = ({ orders }: { orders: MY_ORDERS_QUERYResult }) => {
                             : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
-                        {order?.status.charAt(0).toUpperCase() +
-                          order?.status.slice(1)}
+                        {order.status.charAt(0).toUpperCase() +
+                          order.status.slice(1)}
                       </span>
                     )}
                   </TableCell>
 
+                  {/* Invoice number – hiện chưa có nên fallback '----' */}
                   <TableCell className="hidden sm:table-cell">
-                    {order?.invoice && (
-                      <p className="font-medium line-clamp-1">
-                        {order?.invoice ? order?.invoice?.number : "----"}
-                      </p>
-                    )}
+                    <p className="font-medium line-clamp-1">
+                      {order.invoiceNumber ?? "----"}
+                    </p>
                   </TableCell>
+
+                  {/* Delete icon */}
                   <TableCell
                     onClick={(event) => {
                       event.stopPropagation();
@@ -93,8 +119,10 @@ const OrdersComponent = ({ orders }: { orders: MY_ORDERS_QUERYResult }) => {
           ))}
         </TooltipProvider>
       </TableBody>
+
+      {/* Dialog chi tiết đơn hàng */}
       <OrderDetailDialog
-        order={selectedOrder}
+        order={selectedOrder as any}
         isOpen={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
       />

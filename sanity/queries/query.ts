@@ -1,4 +1,5 @@
 import { defineQuery } from "next-sanity";
+import { getCategories, getDealProducts, getLatestBlogs } from "@/sanity/queries";
 
 const BRANDS_QUERY = defineQuery(`*[_type=='brand'] | order(name asc) `);
 

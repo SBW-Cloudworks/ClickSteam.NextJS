@@ -1,0 +1,157 @@
+// Prisma schema file for Supabase + Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")  // Connection string from .env
+  directUrl = env("DIRECT_URL")    // Direct connection URL for migrations
+}
+
+// Product model
+model Product {
+  id          String   @id @default(cuid())          // Auto-generated ID
+  name        String                                  // Product name
+  slug        String   @unique                       // Product slug
+  description String?                                // Product description
+  price       Int                                    // Product price (đơn vị nhỏ nhất, vd: 49900)
+  discount    Int      @default(0)                   // Discount on product
+  stock       Int                                    // Product stock
+  status      String                                 // Product status (New, Hot, Sale)
+  variant     String                                 // Product variant (gadget, appliances,...)
+  isFeatured  Boolean  @default(false)               // Featured product flag
+
+  // Quan hệ
+  categories  ProductCategory[]                      // Many-to-many với Category
+  brandId     String?                                // Relation đến Brand
+  brand       Brand?   @relation(fields: [brandId], references: [id])
+
+  images      String[] @default([])                  // Array URL ảnh
+
+  createdAt   DateTime @default(now())              // Creation timestamp
+  updatedAt   DateTime @updatedAt                   // Update timestamp
+
+  // Inverse relation với OrderItem
+  orderItems  OrderItem[]                            // One-to-many với OrderItem
+
+  @@index([slug])                                   // Index để lookup theo slug
+}
+
+
+
+// Category model
+model Category {
+  id        String             @id @default(cuid())  // Auto-generated ID
+  title     String             // Category title
+  slug      String             @unique               // Category slug
+  imageUrl  String?            // Optional image for category
+  products  ProductCategory[]  // Many-to-many relation with Product
+  createdAt DateTime           @default(now())       // Creation timestamp
+}
+
+// Brand model
+model Brand {
+  id        String    @id @default(cuid())  // Auto-generated ID
+  name      String    // Brand name
+  slug      String    @unique               // Brand slug
+  imageUrl  String?   // Optional brand logo/image
+  products  Product[] // One-to-many relationship with Product
+  createdAt DateTime  @default(now())       // Creation timestamp
+}
+
+// ProductCategory junction table for many-to-many relationship between Product and Category
+model ProductCategory {
+  id         String   @id @default(cuid())  // Auto-generated ID
+  productId  String
+  categoryId String
+
+  product    Product  @relation(fields: [productId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@unique([productId, categoryId])  // Ensure unique combinations of product and category
+}
+
+// BlogCategory model
+model BlogCategory {
+  id        String    @id @default(cuid())  // Auto-generated ID
+  name      String    // Category name for blog
+  slug      String    @unique               // Category slug
+  blogPosts Blog[]    // One-to-many relationship with Blog posts
+  createdAt DateTime  @default(now())       // Creation timestamp
+}
+
+// Blog model
+model Blog {
+  id          String       @id @default(cuid())  // Auto-generated ID
+  title       String       // Blog title
+  slug        String       @unique               // Blog slug
+  content     String       // Content of the blog post
+  imageUrl    String?      // Optional image URL for the blog post
+  categoryId  String?      // Optional blog category reference
+  blogCategory BlogCategory? @relation(fields: [categoryId], references: [id])
+
+  createdAt   DateTime     @default(now())  // Creation timestamp
+  updatedAt   DateTime     @updatedAt        // Update timestamp
+
+  // Add this field to establish the inverse relationship
+  authorId    String
+  author      Author       @relation(fields: [authorId], references: [id])
+}
+
+
+// Order model
+model Order {
+  id            String      @id @default(cuid())   // Auto-generated ID
+  userId        String      // ID of the user placing the order
+  orderNumber   String      @unique               // Unique order number
+  status        String      // Order status (e.g., pending, shipped)
+  totalPrice    Int         // Total price of the order
+  paymentStatus String      // Payment status (e.g., paid, pending)
+  createdAt     DateTime    @default(now())       // Order creation timestamp
+  updatedAt     DateTime    @updatedAt            // Order update timestamp
+
+  items         OrderItem[] // One-to-many relation with OrderItem
+}
+
+// OrderItem model
+model OrderItem {
+  id          String   @id @default(cuid())  // Auto-generated ID
+  orderId     String   // Reference to the Order
+  productId   String   // Product being ordered
+  quantity    Int      // Quantity of the product ordered
+  price       Int      // Price of the product
+
+  order       Order    @relation(fields: [orderId], references: [id])   // Relation to Order
+  product     Product  @relation(fields: [productId], references: [id]) // Relation to Product
+}
+
+// Address model
+model Address {
+  id          String   @id @default(cuid())  // Auto-generated ID
+  userId      String   // Reference to the user
+  name        String   // Name of the person receiving the delivery
+  addressLine1 String  // Address line 1 (e.g., street address)
+  addressLine2 String? // Address line 2 (optional)
+  city        String   // City
+  state       String   // State/Province
+  zipCode     String   // Postal code
+  country     String   // Country
+
+  createdAt   DateTime @default(now())  // Address creation timestamp
+  updatedAt   DateTime @updatedAt      // Address update timestamp
+}
+
+// Author model (for blog authors)
+model Author {
+  id          String   @id @default(cuid())  // Auto-generated ID
+  name        String   // Author name
+  bio         String?  // Author bio
+  imageUrl    String?  // Optional image URL for author
+  blogPosts   Blog[]   // One-to-many relationship with Blog posts
+  createdAt   DateTime @default(now())  // Creation timestamp
+  updatedAt   DateTime @updatedAt      // Update timestamp
+}
+
+

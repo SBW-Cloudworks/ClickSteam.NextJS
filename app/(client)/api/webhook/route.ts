@@ -1,6 +1,6 @@
 import { Metadata } from "@/actions/createCheckoutSession";
 import stripe from "@/lib/stripe";
-import { backendClient } from "@/sanity/lib/backendClient";
+import prisma from "@/lib/prisma";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
@@ -13,159 +13,160 @@ export async function POST(req: NextRequest) {
   if (!sig) {
     return NextResponse.json(
       { error: "No Signature found for stripe" },
-      { status: 400 }
+      { status: 400 },
     );
   }
+
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {
     console.log("Stripe webhook secret is not set");
     return NextResponse.json(
-      {
-        error: "Stripe webhook secret is not set",
-      },
-      { status: 400 }
+      { error: "Stripe webhook secret is not set" },
+      { status: 400 },
     );
   }
+
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (error) {
     console.error("Webhook signature verification failed:", error);
     return NextResponse.json(
-      {
-        error: `Webhook Error: ${error}`,
-      },
-      { status: 400 }
+      { error: `Webhook Error: ${error}` },
+      { status: 400 },
     );
   }
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
+
     const invoice = session.invoice
       ? await stripe.invoices.retrieve(session.invoice as string)
       : null;
 
     try {
-      await createOrderInSanity(session, invoice);
+      await createOrderInDb(session, invoice);
     } catch (error) {
-      console.error("Error creating order in sanity:", error);
+      console.error("Error creating order in DB:", error);
       return NextResponse.json(
-        {
-          error: `Error creating order: ${error}`,
-        },
-        { status: 400 }
+        { error: `Error creating order: ${error}` },
+        { status: 400 },
       );
     }
   }
+
   return NextResponse.json({ received: true });
 }
 
-async function createOrderInSanity(
+/**
+ * Tạo Order + OrderItems trong Prisma, đồng thời trừ stock sản phẩm.
+ */
+async function createOrderInDb(
   session: Stripe.Checkout.Session,
-  invoice: Stripe.Invoice | null
+  invoice: Stripe.Invoice | null,
 ) {
   const {
     id,
     amount_total,
-    currency,
     metadata,
-    payment_intent,
-    total_details,
+    payment_status,
   } = session;
-  const { orderNumber, customerName, customerEmail, clerkUserId, address } =
-    metadata as unknown as Metadata & { address: string };
+
+  const {
+    orderNumber,
+    customerName,
+    customerEmail,
+    clerkUserId,
+    address,
+  } = metadata as unknown as Metadata & { address?: string };
+  if (!clerkUserId) {
+    throw new Error("clerkUserId is missing in Stripe session metadata");
+  }
+
   const parsedAddress = address ? JSON.parse(address) : null;
 
+  // Lấy line items + product (có metadata.id = id product trong Prisma)
   const lineItemsWithProduct = await stripe.checkout.sessions.listLineItems(
     id,
-    { expand: ["data.price.product"] }
+    { expand: ["data.price.product"] },
   );
 
-  // Create Sanity product references and prepare stock updates
-  const sanityProducts = [];
-  const stockUpdates = [];
-  for (const item of lineItemsWithProduct.data) {
-    const productId = (item.price?.product as Stripe.Product)?.metadata?.id;
-    const quantity = item?.quantity || 0;
+  const itemsData = lineItemsWithProduct.data
+    .map((item) => {
+      const stripeProduct = item.price?.product as Stripe.Product | null;
+      const productId = stripeProduct?.metadata?.id as string | undefined;
 
-    if (!productId) continue;
+      if (!productId) return null;
 
-    sanityProducts.push({
-      _key: crypto.randomUUID(),
-      product: {
-        _type: "reference",
-        _ref: productId,
-      },
-      quantity,
-    });
-    stockUpdates.push({ productId, quantity });
+      const quantity = item.quantity ?? 0;
+      const unitAmount = item.price?.unit_amount ?? 0; // đơn giá (cents)
+
+      return {
+        productId,
+        quantity,
+        price: unitAmount / 100, // chuyển về đơn vị tiền (VD: USD, VND…)
+      };
+    })
+    .filter(
+      (i): i is { productId: string; quantity: number; price: number } =>
+        i !== null,
+    );
+
+  if (!itemsData.length) {
+    throw new Error("No valid line items found for this session");
   }
-  //   Create order in Sanity
 
-  const order = await backendClient.create({
-    _type: "order",
-    orderNumber,
-    stripeCheckoutSessionId: id,
-    stripePaymentIntentId: payment_intent,
-    customerName,
-    stripeCustomerId: customerEmail,
-    clerkUserId: clerkUserId,
-    email: customerEmail,
-    currency,
-    amountDiscount: total_details?.amount_discount
-      ? total_details.amount_discount / 100
-      : 0,
-
-    products: sanityProducts,
-    totalPrice: amount_total ? amount_total / 100 : 0,
-    status: "paid",
-    orderDate: new Date().toISOString(),
-    invoice: invoice
-      ? {
-          id: invoice.id,
-          number: invoice.number,
-          hosted_invoice_url: invoice.hosted_invoice_url,
-        }
-      : null,
-    address: parsedAddress
-      ? {
-          state: parsedAddress.state,
-          zip: parsedAddress.zip,
-          city: parsedAddress.city,
-          address: parsedAddress.address,
+  // Transaction: lưu Address (nếu có) + tạo Order + OrderItems + trừ stock
+  return prisma.$transaction(async (tx) => {
+    // 1. Lưu Address (nếu metadata có gửi)
+    if (parsedAddress) {
+      await tx.address.create({
+        data: {
+          userId: clerkUserId,                        // userId bắt buộc
           name: parsedAddress.name,
-        }
-      : null,
-  });
-
-  // Update stock levels in Sanity
-
-  await updateStockLevels(stockUpdates);
-  return order;
-}
-
-// Function to update stock levels
-async function updateStockLevels(
-  stockUpdates: { productId: string; quantity: number }[]
-) {
-  for (const { productId, quantity } of stockUpdates) {
-    try {
-      // Fetch current stock
-      const product = await backendClient.getDocument(productId);
-
-      if (!product || typeof product.stock !== "number") {
-        console.warn(
-          `Product with ID ${productId} not found or stock is invalid.`
-        );
-        continue;
-      }
-
-      const newStock = Math.max(product.stock - quantity, 0); // Ensure stock does not go negative
-
-      // Update stock in Sanity
-      await backendClient.patch(productId).set({ stock: newStock }).commit();
-    } catch (error) {
-      console.error(`Failed to update stock for product ${productId}:`, error);
+          addressLine1: parsedAddress.address,        // map sang line1
+          addressLine2: null,                         // không có thì để null
+          city: parsedAddress.city,
+          state: parsedAddress.state,
+          zipCode: parsedAddress.zip,
+          country: parsedAddress.country || "Vietnam",
+        },
+      });
     }
-  }
+
+    // 2. Tạo Order + OrderItems
+    const order = await tx.order.create({
+      data: {
+        userId: clerkUserId,
+        orderNumber,
+        status: "paid",                               // tuỳ bạn: "paid" / "completed"
+        totalPrice: Math.round((amount_total ?? 0) / 100),
+        paymentStatus: payment_status ?? "paid",
+
+        items: {
+          create: itemsData.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            // nếu OrderItem.price là Int: dùng Math.round
+            price: Math.round(item.price),
+          })),
+        },
+      },
+    });
+
+    // 3. Trừ stock từng product
+    for (const item of itemsData) {
+      await tx.product.update({
+        where: { id: item.productId },
+        data: {
+          stock: {
+            decrement: item.quantity,
+          },
+        },
+      });
+    }
+
+    return order;
+  });
 }
+

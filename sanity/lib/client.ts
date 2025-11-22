@@ -1,10 +1,12 @@
-import { createClient } from 'next-sanity'
+// sanity/lib/client.ts
 
-import { apiVersion, dataset, projectId } from '../env'
 
-export const client = createClient({
-  projectId,
-  dataset,
-  apiVersion,
-  useCdn: true, // Set to false if statically generating pages, using ISR or tag-based revalidation
-})
+type AnyQuery = string | unknown;
+
+export const client = {
+  // Nếu còn chỗ nào lỡ gọi client.fetch(...) thì nó trả null, không crash
+  fetch: async (_query: AnyQuery, _params?: Record<string, unknown>) => {
+    console.warn("[Sanity client] fetch() được gọi nhưng Sanity đã bị vô hiệu hoá.");
+    return null;
+  },
+} as const;

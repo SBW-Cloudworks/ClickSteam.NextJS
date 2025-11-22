@@ -11,7 +11,7 @@ const HomeTabbar = ({ selectedTab, onTabSelect }: Props) => {
     <div className="flex items-center flex-wrap gap-5 justify-between">
       <div className="flex items-center gap-1.5 text-sm font-semibold">
         <div className="flex items-center gap-1.5 md:gap-3">
-          {productType?.map((item) => (
+          {/* {productType?.map((item) => (
             <button
               onClick={() => onTabSelect(item?.title)}
               key={item?.title}
@@ -19,15 +19,15 @@ const HomeTabbar = ({ selectedTab, onTabSelect }: Props) => {
             >
               {item?.title}
             </button>
-          ))}
+          ))} */}
         </div>
       </div>
-      <Link
+      {/* <Link
         href={"/shop"}
         className="border border-darkColor px-4 py-1 rounded-full hover:bg-shop_light_green hover:text-white hover:border-shop_light_green hoverEffect"
       >
         See all
-      </Link>
+      </Link> */}
     </div>
   );
 };
