@@ -1,7 +1,14 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+// middleware.ts
 
-export default clerkMiddleware();
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
+// Bỏ Clerk hoàn toàn, chỉ cho request đi tiếp
+export function middleware(_req: NextRequest) {
+  return NextResponse.next();
+}
+
+// Giữ nguyên matcher cũ để Next.js biết áp dụng middleware cho route nào
 export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params
