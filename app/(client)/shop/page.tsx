@@ -19,6 +19,7 @@ type UiBrand = {
   brandName: string;
   image?: string | null;
 };
+export const dynamic = "force-dynamic";
 
 const ShopPage = async () => {
   // Lấy categories + brands từ Postgres (Prisma)
