@@ -6,7 +6,10 @@ frontend:
         - npm ci
     build:
       commands:
-        - npx prisma generate
+        # Ghi các biến env từ Amplify vào file .env.production
+        - env | grep -e DATABASE_URL -e DIRECT_URL >> .env.production
+        - env | grep -e NEXT_PUBLIC_ >> .env.production
+        # Build app (script build của bạn đã có "prisma generate && next build")
         - npm run build
   artifacts:
     baseDirectory: .next
@@ -15,12 +18,4 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
-backend:
-  phases:
-    build:
-      commands:
-        - echo "DATABASE_URL=$DATABASE_URL" >> /tmp/envfile
-        - echo "DIRECT_URL=$DIRECT_URL" >> /tmp/envfile
-  env:
-    DATABASE_URL: ${DATABASE_URL}
-    DIRECT_URL: ${DIRECT_URL}
+      - .next/cache/**/*
