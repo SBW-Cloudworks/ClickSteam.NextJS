@@ -37,7 +37,7 @@ const ShopByBrands = async () => {
   return (
     <div className="mb-10 lg:mb-20 bg-shop_light_bg p-5 lg:p-7 rounded-md">
       <div className="flex items-center gap-5 justify-between mb-10">
-        <Title>Shop By Brands</Title>
+        <Title>Thương Hiệu</Title>
         <Link
           href={"/shop"}
           className="text-sm font-semibold tracking-wide hover:text-shop_btn_dark_green hoverEffect"
