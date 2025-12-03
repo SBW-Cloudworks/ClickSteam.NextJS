@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         // hostname: "cdn.sanity.io",\
-        hostname: "clickstream-s3.s3.ap-southeast-1.amazonaws.com",
+        hostname: "clickstream-s3-sbw.s3.ap-southeast-1.amazonaws.com",
       },
     ],
   },
