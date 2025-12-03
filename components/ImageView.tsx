@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import React, { useState } from "react";
+import { getMediaUrl } from "@/lib/getMediaUrl";
 
 interface Props {
   // Giờ chỉ còn là mảng URL ảnh (string[])
@@ -14,10 +15,14 @@ const ImageView = ({ images = [], isStock }: Props) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const hasImages = images.length > 0;
-  // Nếu không có ảnh thì dùng 1 ảnh fallback
-  const mainSrc = hasImages
-    ? images[activeIndex]
-    : "/images/products/product_1.png";
+
+  // 1. Lấy src “thô”
+  const rawMainSrc = hasImages
+    ? images[activeIndex]               // VD: "/images/products/product_1.png"
+    : "/images/products/product_1.png"; // fallback
+
+  // 2. Chuẩn hoá sang URL cuối cùng (S3 hoặc local tuỳ ENV)
+  const mainSrc = getMediaUrl(rawMainSrc);
 
   return (
     <div className="w-full md:w-1/2 space-y-2 md:space-y-4">
@@ -46,25 +51,29 @@ const ImageView = ({ images = [], isStock }: Props) => {
       {/* thumbnail list */}
       {hasImages && images.length > 1 && (
         <div className="grid grid-cols-6 gap-2 h-20 md:h-24">
-          {images.map((img, index) => (
-            <button
-              key={`${img}-${index}`}
-              onClick={() => setActiveIndex(index)}
-              className={`border rounded-md overflow-hidden ${
-                activeIndex === index
-                  ? "border-darkColor opacity-100"
-                  : "opacity-80"
-              }`}
-            >
-              <Image
-                src={img}
-                alt={`Thumbnail ${index + 1}`}
-                width={100}
-                height={100}
-                className="w-full h-auto object-contain"
-              />
-            </button>
-          ))}
+          {images.map((img, index) => {
+            const thumbSrc = getMediaUrl(img);
+
+            return (
+              <button
+                key={`${img}-${index}`}
+                onClick={() => setActiveIndex(index)}
+                className={`border rounded-md overflow-hidden ${
+                  activeIndex === index
+                    ? "border-darkColor opacity-100"
+                    : "opacity-80"
+                }`}
+              >
+                <Image
+                  src={thumbSrc}
+                  alt={`Thumbnail ${index + 1}`}
+                  width={100}
+                  height={100}
+                  className="w-full h-auto object-contain"
+                />
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

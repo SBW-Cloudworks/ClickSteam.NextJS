@@ -11,6 +11,7 @@ import Title from "./Title";
 import ProductSideMenu from "./ProductSideMenu";
 import AddToCartButton from "./AddToCartButton";
 import { urlFor } from "@/sanity/lib/image"; // cho case Sanity cũ
+import { getMediaUrl } from "@/lib/getMediaUrl"; // ✅ thêm dòng này
 
 // Dùng any cho mềm vì đang chuyển dần từ Sanity -> Prisma
 const ProductCard = ({ product }: { product: any }) => {
@@ -27,13 +28,16 @@ const ProductCard = ({ product }: { product: any }) => {
     const first = product.images[0];
 
     if (typeof first === "string") {
-      // ✅ Prisma: mảng string URL
+      // ✅ Prisma: mảng string URL hoặc path
       imageSrc = first;
     } else if (first?.asset?._ref) {
       // ✅ Sanity: object image
       imageSrc = urlFor(first).url();
     }
   }
+
+  // ✅ Chuẩn hoá sang URL S3 (hoặc giữ nguyên nếu là URL http)
+  const finalImageSrc = getMediaUrl(imageSrc);
 
   // 3. Categories: Prisma: string[] , Sanity: array object / string
   const categoryText = (() => {
@@ -68,10 +72,10 @@ const ProductCard = ({ product }: { product: any }) => {
   return (
     <div className="text-sm border-[1px] rounded-md border-darkBlue/20 group bg-white">
       <div className="relative group overflow-hidden bg-shop_light_bg">
-        {imageSrc && slug && (
+        {finalImageSrc && slug && (
           <Link href={`/product/${slug}`}>
             <Image
-              src={imageSrc}
+              src={finalImageSrc}
               alt={product?.name || "productImage"}
               width={500}
               height={500}

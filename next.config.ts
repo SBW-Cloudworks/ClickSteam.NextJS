@@ -5,7 +5,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "cdn.sanity.io",
+        // hostname: "cdn.sanity.io",\
+        hostname: "clickstream-s3.s3.ap-southeast-1.amazonaws.com",
       },
     ],
   },
