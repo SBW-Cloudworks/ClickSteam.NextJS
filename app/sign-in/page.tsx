@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Amplify } from "aws-amplify";
 import { Authenticator } from "@aws-amplify/ui-react";
 import { useAuth } from "@/contexts/AuthContext";   // <<< thêm
+
+// Force dynamic rendering để tránh lỗi prerender với useSearchParams
+export const dynamic = 'force-dynamic';
 
 // Cấu hình Amplify dùng Cognito User Pool
 Amplify.configure({
