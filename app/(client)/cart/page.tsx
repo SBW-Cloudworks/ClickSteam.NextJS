@@ -22,6 +22,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { getMediaUrl } from "@/lib/getMediaUrl";
 
 const CartPage = () => {
   const {
@@ -108,7 +109,7 @@ const CartPage = () => {
                                 className="border p-0.5 md:p-1 mr-2 rounded-md overflow-hidden group bg-white"
                               >
                                 <Image
-                                  src={images[0]}
+                                  src={getMediaUrl(images[0])}
                                   alt="productImage"
                                   width={500}
                                   height={500}
