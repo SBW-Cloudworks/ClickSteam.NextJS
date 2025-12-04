@@ -2,13 +2,16 @@ import "./globals.css";
 import "@aws-amplify/ui-react/styles.css";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ClickstreamProvider } from "@/contexts/ClickstreamProvider";
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang="en">
       <body className="font-poppins antialiased">
         <AuthProvider>
-          {children}
+          <ClickstreamProvider>
+            {children}
+          </ClickstreamProvider>
           <Toaster
             position="bottom-right"
             toastOptions={{
