@@ -1,5 +1,6 @@
 import "./globals.css";
 import "@aws-amplify/ui-react/styles.css";
+import { Suspense } from "react";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ClickstreamProvider } from "@/contexts/ClickstreamProvider";
@@ -9,9 +10,11 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
     <html lang="en">
       <body className="font-poppins antialiased">
         <AuthProvider>
-          <ClickstreamProvider>
-            {children}
-          </ClickstreamProvider>
+          <Suspense fallback={null}>
+            <ClickstreamProvider>
+              {children}
+            </ClickstreamProvider>
+          </Suspense>
           <Toaster
             position="bottom-right"
             toastOptions={{
