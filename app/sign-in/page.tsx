@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Amplify } from "aws-amplify";
 import { Authenticator } from "@aws-amplify/ui-react";
-import { useAuth } from "@/contexts/AuthContext";   // <<< thêm
+import { useAuth } from "@/contexts/AuthContext";
 
 // Cấu hình Amplify dùng Cognito User Pool
 Amplify.configure({
@@ -17,7 +17,7 @@ Amplify.configure({
 
 function RedirectAfterSignIn({ user }: { user: any }) {
   const router = useRouter();
-  const { refreshUser } = useAuth();               // <<< lấy từ context
+  const { refreshUser } = useAuth();
 
   useEffect(() => {
     if (user) {
@@ -34,13 +34,21 @@ function RedirectAfterSignIn({ user }: { user: any }) {
   return null;
 }
 
+function AuthenticatorWrapper() {
+  return (
+    <Authenticator>
+      {({ user }) => <RedirectAfterSignIn user={user} />}
+    </Authenticator>
+  );
+}
+
 export default function SignInPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md">
-        <Authenticator>
-          {({ user }) => <RedirectAfterSignIn user={user} />}
-        </Authenticator>
+        <Suspense fallback={<div className="text-center">Loading...</div>}>
+          <AuthenticatorWrapper />
+        </Suspense>
       </div>
     </div>
   );
