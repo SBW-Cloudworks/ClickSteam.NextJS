@@ -1,0 +1,6 @@
+[submodule "Terraform"]
+	path = Terraform
+	url = https://github.com/SBW-Cloudworks/ClickStream.Terraform
+[submodule "Lambda"]
+	path = Lambda
+	url = https://github.com/SBW-Cloudworks/ClickStream.Lambda
