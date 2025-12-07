@@ -4,6 +4,7 @@ import HomeCategories from "@/components/HomeCategories";
 import LatestBlog from "@/components/LatestBlog";
 import ProductGrid from "@/components/ProductGrid";
 import ShopByBrands from "@/components/ShopByBrands";
+import HomeTracker from "@/components/HomeTracker";
 import { getCategories } from "@/sanity/queries";
 
 import React from "react";
@@ -13,6 +14,7 @@ const Home = async () => {
 
   return (
     <Container className="bg-shop-light-pink">
+      <HomeTracker />
       <HomeBanner />
       <ProductGrid />
       <HomeCategories categories={categories} />

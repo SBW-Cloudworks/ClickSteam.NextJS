@@ -4,6 +4,7 @@ import FavoriteButton from "@/components/FavoriteButton";
 import ImageView from "@/components/ImageView";
 import PriceView from "@/components/PriceView";
 import ProductCharacteristics from "@/components/ProductCharacteristics";
+import ProductViewTracker from "@/components/ProductViewTracker";
 import { getProductBySlug } from "@/sanity/queries";
 import { CornerDownLeft, StarIcon, Truck } from "lucide-react";
 import { notFound } from "next/navigation";
@@ -27,6 +28,7 @@ const SingleProductPage = async ({
 
   return (
     <Container className="flex flex-col md:flex-row gap-10 py-10">
+      <ProductViewTracker product={product} />
       {product.images && product.images.length > 0 && (
         <ImageView images={product.images} isStock={product.stock} />
       )}
