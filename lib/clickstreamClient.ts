@@ -22,6 +22,7 @@ export type ClickstreamElement = {
 
 export type ClickstreamEvent = {
   eventName: string;
+  eventId?: string;
   pageUrl?: string;
   referrer?: string | null;
   userId?: string | null;
@@ -144,11 +145,13 @@ const extractElement = (target: EventTarget | null): ClickstreamElement => {
 };
 
 const buildBaseEvent = (eventName: string, user?: { userId?: string | null; userLoginState?: LoginState }) => {
+  const eventId = makeId();
   const { clientId, sessionId, isFirstVisit } = ensureIdentity();
   if (!isBrowser) return undefined;
 
   return {
     eventName,
+    eventId,
     pageUrl: window.location.href,
     referrer: document.referrer || null,
     userId: user?.userId ?? null,

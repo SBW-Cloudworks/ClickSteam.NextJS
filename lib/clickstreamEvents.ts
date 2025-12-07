@@ -31,6 +31,8 @@ const toProductContext = (product?: ProductLike) => {
   const brand =
     (product as any).brandName ||
     (product as any).brand?.name ||
+    (product as any).brand?.title ||
+    (product as any).brandId?.name ||
     (product as any).brand ||
     (product as any).producer ||
     undefined;

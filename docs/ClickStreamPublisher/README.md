@@ -10,7 +10,7 @@ Client-side tracker for the Next.js frontend to emit clickstream events to API G
 ## Components
 - `lib/clickstreamClient.ts`
   - Identity: generates/persists `clientId` (localStorage), `sessionId` (sessionStorage), resets session after inactivity.
-  - Builders: `trackPageView`, `trackClick`, `trackCustom` to normalize payload shape (pageUrl, referrer, userId, userLoginState, client/session IDs, product/element info).
+  - Builders: `trackPageView`, `trackClick`, `trackCustom` to normalize payload shape (eventId for idempotency, pageUrl, referrer, userId, userLoginState, client/session IDs, product/element info).
   - Element capture: tag/id/role/dataset, trimmed text (<=160 chars), skips sensitive inputs (password/email/tel/number).
   - Transport: fire-and-forget `fetch` with `keepalive`; logs every event to console. Warns if endpoint missing (dry-run).
 - `lib/clickstreamEvents.ts`
