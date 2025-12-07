@@ -28,12 +28,18 @@ const toProductContext = (product?: ProductLike) => {
     typeof (product as any).discountPrice === "number"
       ? (product as any).discountPrice
       : Number((product as any).discountPrice) || undefined;
+  const brand =
+    (product as any).brandName ||
+    (product as any).brand?.name ||
+    (product as any).brand ||
+    (product as any).producer ||
+    undefined;
 
   return {
     id: (product as any)._id || (product as any).id,
     name: product.name,
     category: (product as any).variant || (product as any).category,
-    brand: (product as any).brand || (product as any).producer,
+    brand,
     price,
     discountPrice: discountPrice ?? discount,
     urlPath: slug,

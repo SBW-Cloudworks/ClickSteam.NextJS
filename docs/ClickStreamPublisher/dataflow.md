@@ -1,4 +1,4 @@
-# ClickStream Dataflow (Field vs Stage)
+﻿# ClickStream Dataflow (Field vs Stage)
 
 | Field / Block                | Frontend payload                                      | Raw S3 (after Ingest)                                               | DW (PostgreSQL)                               | Notes                                   |
 | ---                          | ---                                                   | ---                                                                 | ---                                           | ---                                     |
@@ -16,10 +16,9 @@
 | product id                   | `product.id`                                          | `product.id`                                                        | `context_product_id`                          |                                           |
 | product name                 | `product.name`                                        | `product.name`                                                      | `context_product_name`                        |                                           |
 | product category             | `product.category`                                    | `product.category`                                                  | `context_product_category`                    |                                           |
-| product brand                | `product.brand`                                       | `product.brand`                                                     | `context_product_brand`                       |                                           |
+| product brand                | `product.brandName` / `brand?.name` / `brand`         | `product.brand`                                                     | `context_product_brand`                       | Frontend maps brand from DB fields      |
 | product price                | `product.price`                                       | `product.price`                                                     | `context_product_price`                       | BIGINT                                   |
 | product discount price       | `product.discountPrice`                               | `product.discountPrice`                                             | `context_product_discount_price`              | BIGINT                                   |
 | product url path             | `product.urlPath`                                     | `product.urlPath`                                                   | `context_product_url_path`                    |                                           |
 | element metadata             | `element.{tag,id,role,text,dataset}`                  | `element...`                                                        | –                                             | Not stored (needs schema change)        |
 | ingest metadata              | –                                                     | `_ingest.{receivedAt,sourceIp,userAgent,method,path,requestId,apiId,stage,traceId}` | –                              | Not stored; available during ETL        |
-

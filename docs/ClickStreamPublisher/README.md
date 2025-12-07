@@ -22,11 +22,14 @@ Client-side tracker for the Next.js frontend to emit clickstream events to API G
   - Adds global `document` click listener to emit `click` events with element metadata.
 - `app/layout.tsx`
   - Wraps app with `AuthProvider` + `ClickstreamProvider` so tracking is global.
-- Tracker components: `HomeTracker`, `CategoryTracker`, `ProductViewTracker` to fire domain events on page render.
+- Tracker components:
+  - `components/HomeTracker.tsx`: fires `home_view` and skips the global `page_view` once.
+  - `components/CategoryTracker.tsx`: fires `category_view` and skips the global `page_view` once.
+  - `components/ProductViewTracker.tsx`: fires `product_view` and skips the global `page_view` once.
 - Instrumented UI:
-  - `AddToCartButton`: fires `add_to_cart_click`.
-  - `FavoriteButton`: fires `wishlist_toggle` on toggle.
-  - Cart page: fires `checkout_start` and `checkout_complete`; remove item fires `remove_from_cart_click`.
+  - `components/AddToCartButton.tsx`: fires `add_to_cart_click` (button marked `global-clickstream-ignore-click` to avoid duplicate `click`).
+  - `components/FavoriteButton.tsx`: fires `wishlist_toggle` (button marked `global-clickstream-ignore-click`; sets one-time skip for global click).
+  - `app/(client)/cart/page.tsx`: fires `checkout_start` and `checkout_complete`; remove item fires `remove_from_cart_click`; checkout/remove buttons marked `global-clickstream-ignore-click`.
 
 ## Event Payload (current)
 - Base: `{ eventName, pageUrl, referrer, userId, userLoginState, clientId, sessionId, isFirstVisit }`
