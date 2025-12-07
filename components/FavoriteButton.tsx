@@ -5,6 +5,7 @@ import { Heart } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { trackWishlistToggle } from "@/lib/clickstreamEvents";
 
 const FavoriteButton = ({
   showProduct = false,
@@ -22,8 +23,12 @@ const FavoriteButton = ({
     setExistingProduct(availableItem || null);
   }, [product, favoriteProduct]);
 
-  const handleFavorite = (e: React.MouseEvent<HTMLSpanElement>) => {
+  const handleFavorite = (e: React.MouseEvent<HTMLSpanElement | HTMLButtonElement>) => {
+    e.stopPropagation();
     e.preventDefault();
+    if (typeof window !== "undefined") {
+      (window as any).__global_clickstream_ignore_click_once = true;
+    }
     if (product?._id) {
       addToFavorite(product).then(() => {
         toast.success(
@@ -31,6 +36,7 @@ const FavoriteButton = ({
             ? "Product removed successfully!"
             : "Product added successfully!"
         );
+        trackWishlistToggle(product, !existingProduct);
       });
     }
   };
@@ -46,6 +52,7 @@ const FavoriteButton = ({
       ) : (
         <button
           onClick={handleFavorite}
+          global-clickstream-ignore-click="true"
           className="group relative hover:text-shop_light_green hoverEffect border border-shop_light_green/80 hover:border-shop_light_green p-1.5 rounded-sm"
         >
           {existingProduct ? (
