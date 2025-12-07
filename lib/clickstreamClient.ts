@@ -170,12 +170,20 @@ export const trackClick = (params: {
   userId?: string | null;
   userLoginState?: LoginState;
 }) => {
+  if (typeof window !== "undefined" && (window as any).__global_clickstream_ignore_click_once) {
+    delete (window as any).__global_clickstream_ignore_click_once;
+    return;
+  }
+  const target = params.event?.target as HTMLElement | null;
+  if (target && target.closest("[global-clickstream-ignore-click='true']")) {
+    return;
+  }
   const base = buildBaseEvent("click", {
     userId: params.userId,
     userLoginState: params.userLoginState,
   });
   if (!base) return;
-  const element = extractElement(params.event?.target ?? null);
+  const element = extractElement(target ?? null);
   publishEvent({ ...base, element });
 };
 
