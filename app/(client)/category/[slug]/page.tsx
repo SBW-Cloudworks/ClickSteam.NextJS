@@ -1,4 +1,5 @@
 import CategoryProducts from "@/components/CategoryProducts";
+import CategoryTracker from "@/components/CategoryTracker";
 import Container from "@/components/Container";
 import Title from "@/components/Title";
 import { getCategories } from "@/sanity/queries";
@@ -14,6 +15,7 @@ const CategoryPage = async ({
   return (
     <div className="py-10">
       <Container>
+        <CategoryTracker slug={slug} categoryName={slug} />
         <Title>
           Products by Category:{" "}
           <span className="font-bold text-green-600 capitalize tracking-wide">

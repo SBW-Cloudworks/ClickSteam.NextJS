@@ -7,6 +7,7 @@ import useStore from "@/store";
 import toast from "react-hot-toast";
 import PriceFormatter from "./PriceFormatter";
 import QuantityButtons from "./QuantityButtons";
+import { trackAddToCart } from "@/lib/clickstreamEvents";
 
 interface Props {
   product: Product;
@@ -24,6 +25,7 @@ const AddToCartButton = ({ product, className }: Props) => {
       toast.success(
         `${product?.name?.substring(0, 12)}... added successfully!`
       );
+      trackAddToCart(product);
     } else {
       toast.error("Can not add more than available stock");
     }
@@ -47,6 +49,7 @@ const AddToCartButton = ({ product, className }: Props) => {
         <Button
           onClick={handleAddToCart}
           disabled={isOutOfStock}
+          global-clickstream-ignore-click="true"
           className={cn(
             "w-full bg-shop_dark_green/80 text-lightBg shadow-none border border-shop_dark_green/80 font-semibold tracking-wide text-white hover:bg-shop_dark_green hover:border-shop_dark_green hoverEffect",
             className

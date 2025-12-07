@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Container from "@/components/Container";
 import EmptyCart from "@/components/EmptyCart";
@@ -23,6 +23,11 @@ import Link from "next/link";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { getMediaUrl } from "@/lib/getMediaUrl";
+import {
+  trackCheckoutComplete,
+  trackCheckoutStart,
+  trackRemoveFromCart,
+} from "@/lib/clickstreamEvents";
 
 const CartPage = () => {
   const {
@@ -47,7 +52,6 @@ const CartPage = () => {
     }
   };
 
-  // 🔹 Thanh toán giả: không Stripe, không địa chỉ
   const handleCheckout = () => {
     if (!groupedItems.length) {
       toast.error("Giỏ hàng đang trống!");
@@ -61,8 +65,16 @@ const CartPage = () => {
 
     setLoading(true);
 
-    // Giả lập xử lý thanh toán 1.5s
+    trackCheckoutStart({
+      total: getTotalPrice(),
+      itemCount: groupedItems.length,
+    });
+
+    // Simulate checkout processing
     setTimeout(() => {
+      trackCheckoutComplete({
+        total: getTotalPrice(),
+      });
       resetCart();
       setLoading(false);
       setShowSuccess(true);
@@ -156,11 +168,13 @@ const CartPage = () => {
                                     <TooltipTrigger>
                                       <Trash
                                         onClick={() => {
+                                          trackRemoveFromCart(product);
                                           deleteCartProduct(product?._id);
                                           toast.success(
                                             "Đã xóa sản phẩm khỏi giỏ hàng!",
                                           );
                                         }}
+                                        global-clickstream-ignore-click="true"
                                         className="w-4 h-4 md:w-5 md:h-5 mr-1 text-gray-500 hover:text-red-600 hoverEffect"
                                       />
                                     </TooltipTrigger>
@@ -226,6 +240,7 @@ const CartPage = () => {
                           className="w-full rounded-full font-semibold tracking-wide hoverEffect mt-2"
                           size="lg"
                           disabled={loading}
+                          global-clickstream-ignore-click="true"
                           onClick={handleCheckout}
                         >
                           {loading ? "Đang thanh toán..." : "Thanh toán"}
@@ -264,6 +279,7 @@ const CartPage = () => {
                         className="w-full rounded-full font-semibold tracking-wide hoverEffect mt-1"
                         size="lg"
                         disabled={loading}
+                        global-clickstream-ignore-click="true"
                         onClick={handleCheckout}
                       >
                         {loading ? "Đang thanh toán..." : "Thanh toán"}
@@ -277,7 +293,7 @@ const CartPage = () => {
             <EmptyCart />
           )}
 
-          {/* POPUP thanh toán thành công */}
+          {/* Checkout success popup */}
           {showSuccess && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
               <div
@@ -313,3 +329,4 @@ const CartPage = () => {
 };
 
 export default CartPage;
+

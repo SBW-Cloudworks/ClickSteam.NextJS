@@ -25,6 +25,14 @@ export function ClickstreamProvider({ children }: ClickstreamProviderProps) {
   // Page views on initial load and route change
   useEffect(() => {
     if (!pathname) return;
+    // If a page-level tracker already emitted a view event, skip the auto page_view once.
+    const skip =
+      typeof window !== "undefined" &&
+      (window as any).__global_clickstream_ignore_pageview === true;
+    if (skip && typeof window !== "undefined") {
+      delete (window as any).__global_clickstream_ignore_pageview;
+      return;
+    }
     trackPageView({ userId, userLoginState });
   }, [pathname, searchParams, userId, userLoginState]);
 
