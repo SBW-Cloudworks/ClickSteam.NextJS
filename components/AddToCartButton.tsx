@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import PriceFormatter from "./PriceFormatter";
 import QuantityButtons from "./QuantityButtons";
 import { trackAddToCart } from "@/lib/clickstreamEvents";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
   product: Product;
@@ -18,6 +19,7 @@ const AddToCartButton = ({ product, className }: Props) => {
   const { addItem, getItemCount } = useStore();
   const itemCount = getItemCount(product?._id);
   const isOutOfStock = product?.stock === 0;
+  const { isSignedIn, userId } = useAuth();
 
   const handleAddToCart = () => {
     if ((product?.stock as number) > itemCount) {
@@ -25,7 +27,10 @@ const AddToCartButton = ({ product, className }: Props) => {
       toast.success(
         `${product?.name?.substring(0, 12)}... added successfully!`
       );
-      trackAddToCart(product);
+      trackAddToCart(product, {
+        userId,
+        userLoginState: isSignedIn ? "logged_in" : "anonymous",
+      });
     } else {
       toast.error("Can not add more than available stock");
     }

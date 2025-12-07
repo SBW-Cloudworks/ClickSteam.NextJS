@@ -39,7 +39,7 @@ const CartPage = () => {
   } = useStore();
 
   const groupedItems = useStore((state) => state.getGroupedItems());
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, userId } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -65,16 +65,28 @@ const CartPage = () => {
 
     setLoading(true);
 
-    trackCheckoutStart({
-      total: getTotalPrice(),
-      itemCount: groupedItems.length,
-    });
+    trackCheckoutStart(
+      {
+        total: getTotalPrice(),
+        itemCount: groupedItems.length,
+      },
+      {
+        userId,
+        userLoginState: isSignedIn ? "logged_in" : "anonymous",
+      }
+    );
 
     // Simulate checkout processing
     setTimeout(() => {
-      trackCheckoutComplete({
-        total: getTotalPrice(),
-      });
+      trackCheckoutComplete(
+        {
+          total: getTotalPrice(),
+        },
+        {
+          userId,
+          userLoginState: isSignedIn ? "logged_in" : "anonymous",
+        }
+      );
       resetCart();
       setLoading(false);
       setShowSuccess(true);
@@ -168,7 +180,12 @@ const CartPage = () => {
                                     <TooltipTrigger>
                                       <Trash
                                         onClick={() => {
-                                          trackRemoveFromCart(product);
+                                          trackRemoveFromCart(product, {
+                                            userId,
+                                            userLoginState: isSignedIn
+                                              ? "logged_in"
+                                              : "anonymous",
+                                          });
                                           deleteCartProduct(product?._id);
                                           toast.success(
                                             "Đã xóa sản phẩm khỏi giỏ hàng!",

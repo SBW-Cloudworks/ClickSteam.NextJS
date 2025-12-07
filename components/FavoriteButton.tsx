@@ -6,6 +6,7 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { trackWishlistToggle } from "@/lib/clickstreamEvents";
+import { useAuth } from "@/contexts/AuthContext";
 
 const FavoriteButton = ({
   showProduct = false,
@@ -16,6 +17,7 @@ const FavoriteButton = ({
 }) => {
   const { favoriteProduct, addToFavorite } = useStore();
   const [existingProduct, setExistingProduct] = useState<Product | null>(null);
+  const { isSignedIn, userId } = useAuth();
   useEffect(() => {
     const availableItem = favoriteProduct.find(
       (item) => item?._id === product?._id
@@ -36,7 +38,10 @@ const FavoriteButton = ({
             ? "Product removed successfully!"
             : "Product added successfully!"
         );
-        trackWishlistToggle(product, !existingProduct);
+        trackWishlistToggle(product, !existingProduct, {
+          userId,
+          userLoginState: isSignedIn ? "logged_in" : "anonymous",
+        });
       });
     }
   };

@@ -8,6 +8,20 @@ type ProductLike = Partial<Product> & {
   slug?: { current?: string } | string;
 };
 
+type UserContext = {
+  userId?: string | null;
+  userLoginState?: "logged_in" | "anonymous" | "guest";
+};
+
+const withUser = <T extends Record<string, any>>(payload: T, user?: UserContext) => {
+  if (!user) return payload;
+  return {
+    ...payload,
+    userId: user.userId ?? payload.userId,
+    userLoginState: user.userLoginState ?? payload.userLoginState,
+  };
+};
+
 const toProductContext = (product?: ProductLike) => {
   if (!product) return undefined;
   const slug =
@@ -48,59 +62,112 @@ const toProductContext = (product?: ProductLike) => {
   };
 };
 
-export const trackHomeView = () => trackCustom("home_view");
+export const trackHomeView = (user?: UserContext) =>
+  trackCustom("home_view", withUser({}, user));
 
-export const trackCategoryView = (opts: { categoryId?: string; categoryName?: string }) =>
-  trackCustom("category_view", {
-    product: {
-      category: opts.categoryName,
-      id: opts.categoryId,
-    },
-  });
-
-export const trackProductView = (product?: ProductLike) =>
-  trackCustom("product_view", { product: toProductContext(product) });
-
-export const trackAddToCart = (product?: ProductLike) =>
-  trackCustom("add_to_cart_click", { product: toProductContext(product) });
-
-export const trackRemoveFromCart = (product?: ProductLike) =>
-  trackCustom("remove_from_cart_click", { product: toProductContext(product) });
-
-export const trackWishlistToggle = (product?: ProductLike, toggledOn?: boolean) =>
-  trackCustom("wishlist_toggle", {
-    product: toProductContext(product),
-    element: { dataset: { toggledOn: String(Boolean(toggledOn)) } },
-  });
-
-export const trackShareClick = (product?: ProductLike, channel?: string) =>
-  trackCustom("share_click", {
-    product: toProductContext(product),
-    element: channel ? { dataset: { channel } } : undefined,
-  });
-
-export const trackLoginOpen = () => trackCustom("login_open");
-export const trackLoginSuccess = () => trackCustom("login_success");
-export const trackLogout = () => trackCustom("logout");
-
-export const trackCheckoutStart = (opts: { cartId?: string; total?: number; itemCount?: number }) =>
-  trackCustom("checkout_start", {
-    element: {
-      dataset: {
-        cartId: opts.cartId ?? "",
-        total: opts.total !== undefined ? String(opts.total) : "",
-        itemCount: opts.itemCount !== undefined ? String(opts.itemCount) : "",
+export const trackCategoryView = (
+  opts: { categoryId?: string; categoryName?: string },
+  user?: UserContext
+) =>
+  trackCustom(
+    "category_view",
+    withUser(
+      {
+        product: {
+          category: opts.categoryName,
+          id: opts.categoryId,
+        },
       },
-    },
-  });
+      user
+    )
+  );
 
-export const trackCheckoutComplete = (opts: { orderId?: string; orderNumber?: string; total?: number }) =>
-  trackCustom("checkout_complete", {
-    element: {
-      dataset: {
-        orderId: opts.orderId ?? "",
-        orderNumber: opts.orderNumber ?? "",
-        total: opts.total !== undefined ? String(opts.total) : "",
+export const trackProductView = (product?: ProductLike, user?: UserContext) =>
+  trackCustom("product_view", withUser({ product: toProductContext(product) }, user));
+
+export const trackAddToCart = (product?: ProductLike, user?: UserContext) =>
+  trackCustom(
+    "add_to_cart_click",
+    withUser({ product: toProductContext(product) }, user)
+  );
+
+export const trackRemoveFromCart = (product?: ProductLike, user?: UserContext) =>
+  trackCustom(
+    "remove_from_cart_click",
+    withUser({ product: toProductContext(product) }, user)
+  );
+
+export const trackWishlistToggle = (
+  product?: ProductLike,
+  toggledOn?: boolean,
+  user?: UserContext
+) =>
+  trackCustom(
+    "wishlist_toggle",
+    withUser(
+      {
+        product: toProductContext(product),
+        element: { dataset: { toggledOn: String(Boolean(toggledOn)) } },
       },
-    },
-  });
+      user
+    )
+  );
+
+export const trackShareClick = (product?: ProductLike, channel?: string, user?: UserContext) =>
+  trackCustom(
+    "share_click",
+    withUser(
+      {
+        product: toProductContext(product),
+        element: channel ? { dataset: { channel } } : undefined,
+      },
+      user
+    )
+  );
+
+export const trackLoginOpen = (user?: UserContext) =>
+  trackCustom("login_open", withUser({}, user));
+export const trackLoginSuccess = (user?: UserContext) =>
+  trackCustom("login_success", withUser({}, user));
+export const trackLogout = (user?: UserContext) =>
+  trackCustom("logout", withUser({}, user));
+
+export const trackCheckoutStart = (
+  opts: { cartId?: string; total?: number; itemCount?: number },
+  user?: UserContext
+) =>
+  trackCustom(
+    "checkout_start",
+    withUser(
+      {
+        element: {
+          dataset: {
+            cartId: opts.cartId ?? "",
+            total: opts.total !== undefined ? String(opts.total) : "",
+            itemCount: opts.itemCount !== undefined ? String(opts.itemCount) : "",
+          },
+        },
+      },
+      user
+    )
+  );
+
+export const trackCheckoutComplete = (
+  opts: { orderId?: string; orderNumber?: string; total?: number },
+  user?: UserContext
+) =>
+  trackCustom(
+    "checkout_complete",
+    withUser(
+      {
+        element: {
+          dataset: {
+            orderId: opts.orderId ?? "",
+            orderNumber: opts.orderNumber ?? "",
+            total: opts.total !== undefined ? String(opts.total) : "",
+          },
+        },
+      },
+      user
+    )
+  );
