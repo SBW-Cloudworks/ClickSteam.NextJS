@@ -18,6 +18,7 @@ The app is designed to provide a smooth shopping experience with features like p
 
 For a comprehensive overview of the entire Clickstream Analytics Platform, including backend architecture, data pipelines, and analytics dashboards, please refer to [profile/README.md](profile/README.md).
 
+![TechStackBanner](docs/TechStackBanner.png)
 ## ✨ Features
 
 - **User Authentication**: Secure login and registration using Amazon Cognito
